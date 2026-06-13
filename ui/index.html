@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Engineering Bootcamp · BlockseBlock</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ===== Header — course branding ===== -->
+  <header class="site-header">
+    <span class="logo-mark" aria-hidden="true">🌱</span>
+    <div class="titles">
+      <span class="course-title">AI Engineering Bootcamp</span>
+      <span class="org-name">BlockseBlock · Naureen Fathima</span>
+    </div>
+  </header>
+
+  <!-- ===== Main content ===== -->
+  <main class="main-content">
+
+    <!-- ===================================================
+         FEATURE 1: Basic Chat
+         This panel is added in week-1-brain/feature-1-hello-ai.
+         Each subsequent feature adds a new panel below this one.
+         =================================================== -->
+    <section class="panel" id="chat-panel" aria-labelledby="chat-panel-title">
+      <h2 class="panel-title" id="chat-panel-title">Chat with your AI Assistant</h2>
+
+      <!-- Message history -->
+      <div class="message-history" id="message-history" role="log" aria-live="polite" aria-label="Conversation">
+        <!-- Messages are injected here by app.js -->
+        <div class="empty-state" id="empty-state">
+          Ask anything about <strong>[YOUR_DOMAIN]</strong> to get started.
+        </div>
+      </div>
+
+      <!-- Input row -->
+      <div class="chat-input-row">
+        <label for="chat-input" class="sr-only">Your message</label>
+        <input
+          type="text"
+          id="chat-input"
+          class="chat-input"
+          placeholder="Type your message and press Enter…"
+          autocomplete="off"
+          autofocus
+        />
+        <button id="send-btn" class="btn btn-primary" type="button">Send</button>
+      </div>
+    </section>
+
+    <!-- ===================================================
+         PROVIDER INFO — shows which LLM + Voice provider is active.
+         Populated by /api/provider-info once the server is running.
+         =================================================== -->
+    <section class="panel" id="provider-panel" aria-labelledby="provider-panel-title">
+      <h2 class="panel-title" id="provider-panel-title">Active Configuration</h2>
+      <div class="provider-info-card" id="provider-info-card">
+        <span>Loading provider info…</span>
+      </div>
+    </section>
+
+    <!-- ===================================================
+         FUTURE FEATURES — new panels will be added here each week.
+         See week-2-knowledge/, week-3-hands/, week-4-launch/ for details.
+         =================================================== -->
+
+  </main><!-- /.main-content -->
+
+</div><!-- /#app -->
+
+<script src="app.js"></script>
+</body>
+</html>
