@@ -8,16 +8,18 @@ Quick reference:
     from shared.llm_client import call_llm, transcribe_audio, synthesize_speech
     from shared.providers.base import LLMResponse
 """
+from typing import Optional, List
+
 from shared.providers.base import LLMResponse
 from shared.providers.factory import get_provider
 
 
 async def call_llm(
-    messages: list[dict],
+    messages: List[dict],
     temperature: float = 0.7,
     max_tokens: int = 1000,
-    tools: list[dict] | None = None,
-    response_format: dict | None = None,
+    tools: Optional[List[dict]] = None,
+    response_format: Optional[dict] = None,
     **kwargs,
 ) -> LLMResponse:
     """

@@ -4,6 +4,7 @@ Centralized configuration for the AI Engineering Bootcamp.
 All environment variables are read here. No other file in this project should
 call os.getenv() directly — import `settings` from this module instead.
 """
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,7 +12,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables and the .env file."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(Path(__file__).parent.parent / ".env"),
         env_file_encoding="utf-8",
         # Unknown env vars in .env are silently ignored — students can have
         # provider-specific vars set without breaking providers they aren't using.

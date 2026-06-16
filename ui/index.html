@@ -28,7 +28,23 @@
          Each subsequent feature adds a new panel below this one.
          =================================================== -->
     <section class="panel" id="chat-panel" aria-labelledby="chat-panel-title">
-      <h2 class="panel-title" id="chat-panel-title">Chat with your AI Assistant</h2>
+      <!-- Panel header with Structured Mode toggle (Feature 2) -->
+      <div class="panel-header-row">
+        <h2 class="panel-title" id="chat-panel-title">Chat with your AI Assistant</h2>
+
+        <!-- ===================================================
+             FEATURE 2: Structured Mode toggle
+             When on, responses render as cards (intent badge +
+             confidence meter + answer). When off, plain text (Feature 1).
+             =================================================== -->
+        <label class="toggle-label" for="structured-toggle">
+          <span class="toggle-text">Structured Mode</span>
+          <span class="toggle-wrap">
+            <input type="checkbox" id="structured-toggle" role="switch" aria-checked="false" />
+            <span class="toggle-track" aria-hidden="true"></span>
+          </span>
+        </label>
+      </div>
 
       <!-- Message history -->
       <div class="message-history" id="message-history" role="log" aria-live="polite" aria-label="Conversation">

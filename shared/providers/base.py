@@ -7,6 +7,7 @@ change, not a code change.
 """
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from typing import Optional, List
 
 
 @dataclass
@@ -19,7 +20,7 @@ class LLMResponse:
     when you need to inspect the provider's original payload.
     """
 
-    content: str | None
+    content: Optional[str]
     """The text response from the model, or None if the model only made tool calls."""
 
     tool_calls: list[dict] = field(default_factory=list)
@@ -50,11 +51,11 @@ class LLMProvider(ABC):
     @abstractmethod
     async def chat(
         self,
-        messages: list[dict],
+        messages: List[dict],
         temperature: float = 0.7,
         max_tokens: int = 1000,
-        tools: list[dict] | None = None,
-        response_format: dict | None = None,
+        tools: Optional[List[dict]] = None,
+        response_format: Optional[dict] = None,
     ) -> LLMResponse:
         """
         Send a list of messages to the model and return the response.

@@ -5,6 +5,7 @@ Used for LLM_PROVIDER=openai. Can also target any other OpenAI-compatible host
 (e.g. Azure OpenAI, Together AI) by setting OPENAI_BASE_URL in .env.
 """
 import json
+from typing import Optional, List
 
 from openai import AsyncOpenAI
 
@@ -17,9 +18,9 @@ class OpenAIProvider(LLMProvider):
 
     def __init__(
         self,
-        api_key: str | None = None,
-        base_url: str | None = None,
-        model: str | None = None,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        model: Optional[str] = None,
     ) -> None:
         self._api_key = api_key or settings.openai_api_key
         # base_url=None tells the openai library to use the default OpenAI endpoint.
@@ -34,11 +35,11 @@ class OpenAIProvider(LLMProvider):
 
     async def chat(
         self,
-        messages: list[dict],
+        messages: List[dict],
         temperature: float = 0.7,
         max_tokens: int = 1000,
-        tools: list[dict] | None = None,
-        response_format: dict | None = None,
+        tools: Optional[List[dict]] = None,
+        response_format: Optional[dict] = None,
     ) -> LLMResponse:
         """Send messages to the model and return a normalized response."""
         client = self._get_client()

@@ -9,20 +9,21 @@ Key differences from the OpenAI API that this class handles transparently:
   5. Anthropic does not provide speech (STT/TTS) APIs.
 """
 import anthropic
+from typing import Optional, List
 
 from shared.config import settings
 from shared.providers.base import LLMProvider, LLMResponse
 
 
-def _extract_system_message(messages: list[dict]) -> tuple[str, list[dict]]:
+def _extract_system_message(messages: List[dict]) -> tuple[str, List[dict]]:
     """
     Split an OpenAI-style messages list into (system_content, remaining_messages).
 
     Anthropic requires the system instruction to be passed as a separate parameter,
     not mixed into the messages array. This helper does that extraction.
     """
-    system_parts: list[str] = []
-    other_messages: list[dict] = []
+    system_parts: List[str] = []
+    other_messages: List[dict] = []
 
     for msg in messages:
         if msg.get("role") == "system":
@@ -33,7 +34,7 @@ def _extract_system_message(messages: list[dict]) -> tuple[str, list[dict]]:
     return "\n\n".join(system_parts), other_messages
 
 
-def _translate_tools(openai_tools: list[dict]) -> list[dict]:
+def _translate_tools(openai_tools: List[dict]) -> List[dict]:
     """
     Convert OpenAI-style tool schemas to Anthropic's format.
 
@@ -65,11 +66,11 @@ class AnthropicProvider(LLMProvider):
 
     async def chat(
         self,
-        messages: list[dict],
+        messages: List[dict],
         temperature: float = 0.7,
         max_tokens: int = 1000,
-        tools: list[dict] | None = None,
-        response_format: dict | None = None,
+        tools: Optional[List[dict]] = None,
+        response_format: Optional[dict] = None,
     ) -> LLMResponse:
         """Send messages to the Anthropic API and return a normalized response."""
         system_content, remaining_messages = _extract_system_message(messages)

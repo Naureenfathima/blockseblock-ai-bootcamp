@@ -16,6 +16,7 @@ IMPORTANT: Many local models do not reliably support tool calling or JSON mode.
   - For voice (Feature 10): set VOICE_PROVIDER=openai — Ollama doesn't do speech
 """
 import logging
+from typing import Optional, List
 
 from shared.config import settings
 from shared.providers.base import LLMProvider, LLMResponse
@@ -56,11 +57,11 @@ class OllamaProvider(OpenAIProvider):
 
     async def chat(
         self,
-        messages: list[dict],
+        messages: List[dict],
         temperature: float = 0.7,
         max_tokens: int = 1000,
-        tools: list[dict] | None = None,
-        response_format: dict | None = None,
+        tools: Optional[List[dict]] = None,
+        response_format: Optional[dict] = None,
     ) -> LLMResponse:
         """Send messages to a locally running model via Ollama.
 

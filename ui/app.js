@@ -59,7 +59,7 @@ function appendMessage(role, text, isThinking = false) {
   return wrapper;
 }
 
-/** Send the current input value to POST /api/chat and display the reply. */
+/** Send the current input value to /api/chat and display the reply. */
 async function sendMessage() {
   const text = chatInput.value.trim();
   if (!text) return;
@@ -69,11 +69,14 @@ async function sendMessage() {
 
   appendMessage("user", text);
 
-  // Show a typing indicator while waiting for the response.
   const thinkingEl = appendMessage("ai", "", true);
 
+  // Feature 2: route to /api/chat/structured when Structured Mode is on.
+  const isStructured = structuredToggle?.checked ?? false;
+
   try {
-    const response = await fetch(`${API_BASE}/api/chat`, {
+    const endpoint = isStructured ? "/api/chat/structured" : "/api/chat";
+    const response = await fetch(`${API_BASE}${endpoint}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: text }),
@@ -85,10 +88,13 @@ async function sendMessage() {
     }
 
     const data = await response.json();
-
-    // Replace the thinking indicator with the real reply.
     thinkingEl.remove();
-    appendMessage("ai", data.response ?? "(no response)");
+
+    if (isStructured) {
+      appendStructuredResponse(data);
+    } else {
+      appendMessage("ai", data.response ?? "(no response)");
+    }
 
   } catch (err) {
     thinkingEl.remove();
@@ -136,6 +142,86 @@ async function loadProviderInfo() {
 }
 
 loadProviderInfo();
+
+// =============================================================================
+// Feature 2: Structured Mode
+// =============================================================================
+
+const structuredToggle = document.getElementById("structured-toggle");
+
+// Keep the aria-checked attribute in sync with checkbox state for accessibility.
+structuredToggle?.addEventListener("change", () => {
+  structuredToggle.setAttribute("aria-checked", String(structuredToggle.checked));
+});
+
+/**
+ * Render a StructuredResponse as a visual card in the message history.
+ *
+ * @param {{ intent: string, answer: string, confidence: number, sources_needed: boolean }} data
+ */
+function appendStructuredResponse(data) {
+  // Remove the empty-state placeholder on first message (same as appendMessage).
+  document.getElementById("empty-state")?.remove();
+
+  // Outer wrapper mirrors the .message.ai layout so it aligns with plain messages.
+  const wrapper = document.createElement("div");
+  wrapper.className = "message ai";
+
+  const label = document.createElement("span");
+  label.className = "role-label";
+  label.textContent = "Assistant";
+
+  // Card body
+  const card = document.createElement("div");
+  card.className = "response-card";
+
+  // ── Header row: intent badge + confidence meter ──
+  const header = document.createElement("div");
+  header.className = "response-card-header";
+
+  // Intent badge
+  const badge = document.createElement("span");
+  badge.className = "intent-badge";
+  badge.dataset.intent = data.intent ?? "unclear";
+  badge.textContent = (data.intent ?? "unclear").replace(/_/g, " ");
+  header.appendChild(badge);
+
+  // Confidence meter
+  const pct = Math.round((data.confidence ?? 0) * 100);
+  const level = pct >= 70 ? "high" : pct >= 40 ? "medium" : "low";
+
+  const confidenceWrap = document.createElement("div");
+  confidenceWrap.className = "confidence-wrap";
+  confidenceWrap.innerHTML = `
+    <span class="confidence-label">Confidence</span>
+    <div class="confidence-bar-track">
+      <div class="confidence-bar-fill" data-level="${level}" style="width:${pct}%"></div>
+    </div>
+    <span class="confidence-pct">${pct}%</span>
+  `;
+  header.appendChild(confidenceWrap);
+
+  card.appendChild(header);
+
+  // ── Answer text ──
+  const answer = document.createElement("p");
+  answer.className = "response-card-answer";
+  answer.textContent = data.answer ?? "";
+  card.appendChild(answer);
+
+  // ── Sources needed hint ──
+  if (data.sources_needed) {
+    const hint = document.createElement("span");
+    hint.className = "sources-tag";
+    hint.textContent = "⚠ This answer would improve with domain documents (added in Feature 4).";
+    card.appendChild(hint);
+  }
+
+  wrapper.appendChild(label);
+  wrapper.appendChild(card);
+  messageHistory.appendChild(wrapper);
+  messageHistory.scrollTop = messageHistory.scrollHeight;
+}
 
 // =============================================================================
 // Future features will add their JS sections below this line.

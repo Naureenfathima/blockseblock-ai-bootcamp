@@ -9,12 +9,13 @@ Key differences from the OpenAI API that this class handles transparently:
   4. Cohere does not provide speech (STT/TTS) APIs.
 """
 import cohere
+from typing import Optional, List
 
 from shared.config import settings
 from shared.providers.base import LLMProvider, LLMResponse
 
 
-def _split_messages(messages: list[dict]) -> tuple[str, str, list[dict]]:
+def _split_messages(messages: List[dict]) -> tuple[str, str, List[dict]]:
     """
     Split an OpenAI-style messages list into (system_preamble, current_message, history).
 
@@ -25,8 +26,8 @@ def _split_messages(messages: list[dict]) -> tuple[str, str, list[dict]]:
 
     This function extracts these three pieces from a flat OpenAI-style messages list.
     """
-    preamble_parts: list[str] = []
-    history: list[dict] = []
+    preamble_parts: List[str] = []
+    history: List[dict] = []
     current_user_message = ""
 
     # Walk the messages; the last user message becomes `message`, everything else
@@ -51,7 +52,7 @@ def _split_messages(messages: list[dict]) -> tuple[str, str, list[dict]]:
     return "\n\n".join(preamble_parts), current_user_message, history
 
 
-def _translate_tools(openai_tools: list[dict]) -> list[dict]:
+def _translate_tools(openai_tools: List[dict]) -> List[dict]:
     """
     Convert OpenAI-style tool schemas to Cohere's format.
 
@@ -92,11 +93,11 @@ class CohereProvider(LLMProvider):
 
     async def chat(
         self,
-        messages: list[dict],
+        messages: List[dict],
         temperature: float = 0.7,
         max_tokens: int = 1000,
-        tools: list[dict] | None = None,
-        response_format: dict | None = None,
+        tools: Optional[List[dict]] = None,
+        response_format: Optional[dict] = None,
     ) -> LLMResponse:
         """Send messages to the Cohere API and return a normalized response."""
         preamble, current_message, history = _split_messages(messages)

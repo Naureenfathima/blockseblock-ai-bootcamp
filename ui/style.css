@@ -234,6 +234,190 @@ html, body {
 
 .btn-secondary:hover { background: var(--color-almond); }
 
+/* =============================================================================
+   Feature 2: Structured Mode — toggle, intent badges, confidence meter
+   ============================================================================= */
+
+/* Panel header row (title + toggle side by side) */
+.panel-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1.5px solid var(--color-pistache);
+}
+
+/* Remove the margin-bottom from panel-title when it sits inside a header row */
+.panel-header-row .panel-title {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+/* Toggle (custom checkbox styled as a pill switch) */
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-text {
+  font-size: 0.82rem;
+  color: var(--color-carob);
+  font-weight: 500;
+}
+
+.toggle-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.toggle-wrap input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.toggle-track {
+  display: block;
+  width: 40px;
+  height: 22px;
+  background: var(--color-pistache);
+  border-radius: 99px;
+  transition: background 0.2s;
+  position: relative;
+}
+
+.toggle-track::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  transition: transform 0.2s;
+}
+
+.toggle-wrap input:checked ~ .toggle-track {
+  background: var(--color-matcha);
+}
+
+.toggle-wrap input:checked ~ .toggle-track::after {
+  transform: translateX(18px);
+}
+
+.toggle-wrap input:focus-visible ~ .toggle-track {
+  outline: 2px solid var(--color-matcha);
+  outline-offset: 2px;
+}
+
+/* --- Structured response card --- */
+.response-card {
+  background: var(--color-almond);
+  border: 1.5px solid var(--color-pistache);
+  border-radius: var(--radius-md);
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: 100%;
+}
+
+.response-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+/* Intent badges — one earthy color per intent */
+.intent-badge {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 99px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.intent-badge[data-intent="domain_question"]  { background: var(--color-matcha);   color: white; }
+.intent-badge[data-intent="general_question"] { background: var(--color-chai);     color: var(--color-carob); }
+.intent-badge[data-intent="action_request"]   { background: var(--color-pistache); color: white; }
+.intent-badge[data-intent="unclear"]          {
+  background: transparent;
+  color: var(--color-carob);
+  border: 1.5px solid var(--color-carob);
+}
+
+/* Confidence meter */
+.confidence-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 120px;
+}
+
+.confidence-label {
+  font-size: 0.75rem;
+  color: var(--color-pistache);
+  white-space: nowrap;
+}
+
+.confidence-bar-track {
+  flex: 1;
+  height: 6px;
+  background: var(--color-pistache);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.confidence-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: var(--color-matcha);
+  transition: width 0.4s ease;
+}
+
+/* Fill color changes at low confidence */
+.confidence-bar-fill[data-level="low"]    { background: var(--color-chai); }
+.confidence-bar-fill[data-level="medium"] { background: var(--color-pistache); }
+.confidence-bar-fill[data-level="high"]   { background: var(--color-matcha); }
+
+.confidence-pct {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-carob);
+  min-width: 2.5rem;
+  text-align: right;
+}
+
+/* Sources needed indicator */
+.sources-tag {
+  font-size: 0.72rem;
+  color: var(--color-pistache);
+  font-style: italic;
+}
+
+/* Answer text inside a card */
+.response-card-answer {
+  font-size: 0.95rem;
+  color: var(--color-carob);
+  line-height: 1.6;
+}
+
 /* --- Provider info card (added by multi-provider feature) --- */
 .provider-info-card {
   background: var(--color-almond);
