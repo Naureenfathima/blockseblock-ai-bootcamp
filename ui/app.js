@@ -59,7 +59,7 @@ function appendMessage(role, text, isThinking = false) {
   return wrapper;
 }
 
-/** Send the current input value to /api/chat and display the reply. */
+/** Send the current input value to the appropriate chat endpoint. */
 async function sendMessage() {
   const text = chatInput.value.trim();
   if (!text) return;
@@ -68,14 +68,23 @@ async function sendMessage() {
   sendBtn.disabled = true;
 
   appendMessage("user", text);
-
   const thinkingEl = appendMessage("ai", "", true);
 
-  // Feature 2: route to /api/chat/structured when Structured Mode is on.
   const isStructured = structuredToggle?.checked ?? false;
 
+  // Feature 3: if a session is active, all messages go through the session endpoint
+  // (which always returns a StructuredResponse). Fall back to Feature 1/2 endpoints
+  // only when no session is active.
+  let endpoint;
+  if (currentSessionId) {
+    endpoint = `/api/sessions/${currentSessionId}/chat`;
+  } else if (isStructured) {
+    endpoint = "/api/chat/structured";
+  } else {
+    endpoint = "/api/chat";
+  }
+
   try {
-    const endpoint = isStructured ? "/api/chat/structured" : "/api/chat";
     const response = await fetch(`${API_BASE}${endpoint}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -90,11 +99,15 @@ async function sendMessage() {
     const data = await response.json();
     thinkingEl.remove();
 
-    if (isStructured) {
+    // Session endpoint and structured mode both return StructuredResponse.
+    if (currentSessionId || isStructured) {
       appendStructuredResponse(data);
     } else {
       appendMessage("ai", data.response ?? "(no response)");
     }
+
+    // Refresh the sidebar after each message so the session title and count update.
+    if (currentSessionId) loadSessions();
 
   } catch (err) {
     thinkingEl.remove();
@@ -222,6 +235,141 @@ function appendStructuredResponse(data) {
   messageHistory.appendChild(wrapper);
   messageHistory.scrollTop = messageHistory.scrollHeight;
 }
+
+// =============================================================================
+// Feature 3: Session management
+// =============================================================================
+
+/** The currently active session ID, or null when no session is selected. */
+let currentSessionId = null;
+
+const newChatBtn    = document.getElementById("new-chat-btn");
+const sessionList   = document.getElementById("session-list");
+const sessionLabel  = document.getElementById("session-label");
+
+/** Clear the message history area and reset the empty-state placeholder. */
+function clearChat() {
+  messageHistory.innerHTML = `
+    <div class="empty-state" id="empty-state">
+      Start a <strong>New Chat</strong> or ask anything about <strong>[YOUR_DOMAIN]</strong>.
+    </div>`;
+}
+
+/** Mark one session item as active in the sidebar. */
+function setActiveSession(sessionId) {
+  document.querySelectorAll(".session-item").forEach((el) => {
+    el.classList.toggle("active", el.dataset.sessionId === sessionId);
+  });
+
+  if (sessionLabel) {
+    if (sessionId) {
+      sessionLabel.textContent = `session: ${sessionId.slice(0, 8)}…`;
+      sessionLabel.removeAttribute("hidden");
+    } else {
+      sessionLabel.setAttribute("hidden", "");
+    }
+  }
+}
+
+/**
+ * Fetch all sessions from the API and render them in the sidebar.
+ * Silently does nothing if the /api/sessions endpoint isn't available yet
+ * (Feature 1 and 2 servers don't have it).
+ */
+async function loadSessions() {
+  if (!sessionList) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/sessions`);
+    if (!res.ok) throw new Error("sessions endpoint not available");
+
+    const sessions = await res.json();
+
+    if (!sessions.length) {
+      sessionList.innerHTML = `<p class="sidebar-empty">No sessions yet.<br>Click <strong>New Chat</strong> to start.</p>`;
+      return;
+    }
+
+    sessionList.innerHTML = "";
+    sessions.forEach((s) => {
+      const btn = document.createElement("button");
+      btn.className = "session-item";
+      btn.dataset.sessionId = s.id;
+      if (s.id === currentSessionId) btn.classList.add("active");
+
+      btn.innerHTML = `
+        <div class="session-item-title">${escapeHtml(s.title)}</div>
+        <div class="session-item-meta">${s.message_count} message${s.message_count !== 1 ? "s" : ""}</div>
+      `;
+      btn.addEventListener("click", () => switchToSession(s.id));
+      sessionList.appendChild(btn);
+    });
+  } catch {
+    // /api/sessions isn't available on the Feature 1/2 server — sidebar stays empty gracefully.
+    sessionList.innerHTML = `<p class="sidebar-empty" style="font-size:0.75rem">Session history requires the Feature 3 server.</p>`;
+  }
+}
+
+/**
+ * Create a new session via the API and switch to it.
+ */
+async function createNewSession() {
+  try {
+    const res = await fetch(`${API_BASE}/api/sessions`, { method: "POST" });
+    if (!res.ok) throw new Error(`Server error ${res.status}`);
+
+    const data = await res.json();
+    currentSessionId = data.session_id;
+    clearChat();
+    setActiveSession(currentSessionId);
+    await loadSessions();
+    chatInput.focus();
+  } catch (err) {
+    alert(`Could not create a new session: ${err.message}\nIs the Feature 3 server running?`);
+  }
+}
+
+/**
+ * Load a session's history from the API and render it in the chat area.
+ */
+async function switchToSession(sessionId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/history`);
+    if (!res.ok) throw new Error(`Server error ${res.status}`);
+
+    const messages = await res.json();
+    currentSessionId = sessionId;
+    clearChat();
+
+    messages.forEach((msg) => {
+      if (msg.role === "user") {
+        appendMessage("user", msg.content);
+      } else {
+        // History messages are stored as plain answer text — render as plain bubbles.
+        appendMessage("ai", msg.content);
+      }
+    });
+
+    setActiveSession(sessionId);
+    chatInput.focus();
+  } catch (err) {
+    appendMessage("ai", `Could not load session: ${err.message}`);
+  }
+}
+
+/** Minimal HTML escape to prevent XSS in the session title. */
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+newChatBtn?.addEventListener("click", createNewSession);
+
+// Load session list on page load so the sidebar populates immediately.
+loadSessions();
 
 // =============================================================================
 // Future features will add their JS sections below this line.

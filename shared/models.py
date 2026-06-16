@@ -1,20 +1,24 @@
 """
 Shared Pydantic models for the AI Engineering Bootcamp.
 
-This file holds data models that are used by more than one feature —
-for example, ChatMessage, Document, and SessionState. Each feature may
-also define its own local models inside its own directory.
+This file holds data models that are used by more than one feature.
+Each feature may also define its own local models inside its own directory.
 
 New models are added here as they are introduced in the course:
   - Feature 2 adds: StructuredResponse
-  - Feature 3 adds: SessionState
+  - Feature 3 adds: Message, Session
   - Feature 4 adds: Document, UploadedFile
   - Feature 8 adds: ToolDefinition, ToolCall
 """
-from typing import Literal
+from datetime import datetime
+from typing import List, Literal
 
 from pydantic import BaseModel, Field
 
+
+# =============================================================================
+# Feature 2: Structured output
+# =============================================================================
 
 class StructuredResponse(BaseModel):
     """
@@ -63,4 +67,58 @@ class StructuredResponse(BaseModel):
             "general knowledge or the system prompt alone. "
             "This flag is used in Week 2 to decide whether to trigger RAG retrieval."
         )
+    )
+
+
+# =============================================================================
+# Feature 3: Conversation memory
+# =============================================================================
+
+class Message(BaseModel):
+    """
+    A single message in a conversation — either from the user or the assistant.
+
+    Messages are stored in order inside a Session and sent to the LLM as
+    conversation history so the assistant can refer back to earlier exchanges.
+    """
+
+    role: Literal["user", "assistant"] = Field(
+        description=(
+            "Who sent this message. 'user' is the person typing; "
+            "'assistant' is the AI's reply."
+        )
+    )
+
+    content: str = Field(
+        description="The text of the message."
+    )
+
+    timestamp: datetime = Field(
+        description="When this message was recorded, in UTC."
+    )
+
+
+class Session(BaseModel):
+    """
+    A single conversation thread between a user and the assistant.
+
+    A session holds the full ordered history of messages for one conversation.
+    When the user starts a 'New Chat', a new session is created with a fresh
+    empty history — previous sessions remain accessible in the sidebar.
+    """
+
+    id: str = Field(
+        description="Unique identifier for this session (a UUID)."
+    )
+
+    created_at: datetime = Field(
+        description="When this session was started, in UTC."
+    )
+
+    messages: List[Message] = Field(
+        default_factory=list,
+        description=(
+            "All messages in this conversation, oldest first. "
+            "The assistant uses this list as context when generating each new reply."
+        ),
     )

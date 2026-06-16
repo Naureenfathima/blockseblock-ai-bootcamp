@@ -39,7 +39,16 @@ html, body {
 #app {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;       /* full viewport — sidebar + chat scroll independently */
+  overflow: hidden;
+}
+
+/* --- App body: sidebar + main side by side (Feature 3) --- */
+.app-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;       /* allows children to scroll without overflowing the viewport */
+  overflow: hidden;
 }
 
 /* --- Header --- */
@@ -88,6 +97,8 @@ html, body {
   margin: 0 auto;
   padding: 1.5rem 1rem 2rem;
   gap: 1.5rem;
+  overflow-y: auto;
+  min-width: 0;        /* prevent flex blowout when sidebar is present */
 }
 
 /* --- Panels (each feature adds one) --- */
@@ -233,6 +244,97 @@ html, body {
 }
 
 .btn-secondary:hover { background: var(--color-almond); }
+
+/* =============================================================================
+   Feature 3: Session sidebar
+   ============================================================================= */
+
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--color-vanilla);
+  border-right: 1.5px solid var(--color-pistache);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  padding: 0.875rem 0.75rem;
+  border-bottom: 1.5px solid var(--color-pistache);
+}
+
+.btn-full { width: 100%; }
+
+.session-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-empty {
+  font-size: 0.82rem;
+  color: var(--color-pistache);
+  text-align: center;
+  padding: 1.5rem 1rem;
+  line-height: 1.5;
+}
+
+/* Individual session item in the sidebar */
+.session-item {
+  display: block;
+  width: 100%;
+  padding: 0.6rem 0.875rem;
+  text-align: left;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  margin: 0 0.25rem;
+  width: calc(100% - 0.5rem);
+  transition: background 0.12s;
+}
+
+.session-item:hover {
+  background: rgba(128, 150, 113, 0.12);   /* matcha at low opacity */
+}
+
+.session-item.active {
+  background: var(--color-matcha);
+}
+
+.session-item.active .session-item-title,
+.session-item.active .session-item-meta {
+  color: white;
+}
+
+.session-item-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-carob);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.session-item-meta {
+  font-size: 0.72rem;
+  color: var(--color-pistache);
+  margin-top: 2px;
+}
+
+/* Session label shown in the chat panel header */
+.session-label {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--color-pistache);
+  margin-left: 0.5rem;
+  font-style: italic;
+}
 
 /* =============================================================================
    Feature 2: Structured Mode — toggle, intent badges, confidence meter

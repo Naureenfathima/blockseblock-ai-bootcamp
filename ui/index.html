@@ -19,73 +19,93 @@
     </div>
   </header>
 
-  <!-- ===== Main content ===== -->
-  <main class="main-content">
+  <!-- ===== App body: sidebar + main (Feature 3 adds the sidebar) ===== -->
+  <div class="app-body">
 
     <!-- ===================================================
-         FEATURE 1: Basic Chat
-         This panel is added in week-1-brain/feature-1-hello-ai.
-         Each subsequent feature adds a new panel below this one.
+         FEATURE 3: Session sidebar
+         Lists past conversations; "New Chat" starts a fresh session.
+         Populated by app.js calling GET /api/sessions.
          =================================================== -->
-    <section class="panel" id="chat-panel" aria-labelledby="chat-panel-title">
-      <!-- Panel header with Structured Mode toggle (Feature 2) -->
-      <div class="panel-header-row">
-        <h2 class="panel-title" id="chat-panel-title">Chat with your AI Assistant</h2>
-
-        <!-- ===================================================
-             FEATURE 2: Structured Mode toggle
-             When on, responses render as cards (intent badge +
-             confidence meter + answer). When off, plain text (Feature 1).
-             =================================================== -->
-        <label class="toggle-label" for="structured-toggle">
-          <span class="toggle-text">Structured Mode</span>
-          <span class="toggle-wrap">
-            <input type="checkbox" id="structured-toggle" role="switch" aria-checked="false" />
-            <span class="toggle-track" aria-hidden="true"></span>
-          </span>
-        </label>
+    <aside class="sidebar" id="session-sidebar" aria-label="Conversation history">
+      <div class="sidebar-header">
+        <button id="new-chat-btn" class="btn btn-primary btn-full" type="button">
+          + New Chat
+        </button>
       </div>
+      <nav id="session-list" class="session-list" aria-label="Past sessions">
+        <p class="sidebar-empty">No sessions yet.<br>Click <strong>New Chat</strong> to start.</p>
+      </nav>
+    </aside>
 
-      <!-- Message history -->
-      <div class="message-history" id="message-history" role="log" aria-live="polite" aria-label="Conversation">
-        <!-- Messages are injected here by app.js -->
-        <div class="empty-state" id="empty-state">
-          Ask anything about <strong>[YOUR_DOMAIN]</strong> to get started.
+    <!-- ===== Main content ===== -->
+    <main class="main-content">
+
+      <!-- ===================================================
+           FEATURE 1 + 2: Chat panel
+           =================================================== -->
+      <section class="panel" id="chat-panel" aria-labelledby="chat-panel-title">
+        <!-- Panel header with Structured Mode toggle (Feature 2) -->
+        <div class="panel-header-row">
+          <h2 class="panel-title" id="chat-panel-title">
+            Chat with your AI Assistant
+            <span class="session-label" id="session-label" hidden></span>
+          </h2>
+
+          <!-- ===================================================
+               FEATURE 2: Structured Mode toggle
+               When on, responses render as cards (intent badge +
+               confidence meter + answer). When off, plain text (Feature 1).
+               =================================================== -->
+          <label class="toggle-label" for="structured-toggle">
+            <span class="toggle-text">Structured Mode</span>
+            <span class="toggle-wrap">
+              <input type="checkbox" id="structured-toggle" role="switch" aria-checked="false" />
+              <span class="toggle-track" aria-hidden="true"></span>
+            </span>
+          </label>
         </div>
-      </div>
 
-      <!-- Input row -->
-      <div class="chat-input-row">
-        <label for="chat-input" class="sr-only">Your message</label>
-        <input
-          type="text"
-          id="chat-input"
-          class="chat-input"
-          placeholder="Type your message and press Enter…"
-          autocomplete="off"
-          autofocus
-        />
-        <button id="send-btn" class="btn btn-primary" type="button">Send</button>
-      </div>
-    </section>
+        <!-- Message history -->
+        <div class="message-history" id="message-history" role="log" aria-live="polite" aria-label="Conversation">
+          <div class="empty-state" id="empty-state">
+            Start a <strong>New Chat</strong> or ask anything about <strong>[YOUR_DOMAIN]</strong>.
+          </div>
+        </div>
 
-    <!-- ===================================================
-         PROVIDER INFO — shows which LLM + Voice provider is active.
-         Populated by /api/provider-info once the server is running.
-         =================================================== -->
-    <section class="panel" id="provider-panel" aria-labelledby="provider-panel-title">
-      <h2 class="panel-title" id="provider-panel-title">Active Configuration</h2>
-      <div class="provider-info-card" id="provider-info-card">
-        <span>Loading provider info…</span>
-      </div>
-    </section>
+        <!-- Input row -->
+        <div class="chat-input-row">
+          <label for="chat-input" class="sr-only">Your message</label>
+          <input
+            type="text"
+            id="chat-input"
+            class="chat-input"
+            placeholder="Type your message and press Enter…"
+            autocomplete="off"
+            autofocus
+          />
+          <button id="send-btn" class="btn btn-primary" type="button">Send</button>
+        </div>
+      </section>
 
-    <!-- ===================================================
-         FUTURE FEATURES — new panels will be added here each week.
-         See week-2-knowledge/, week-3-hands/, week-4-launch/ for details.
-         =================================================== -->
+      <!-- ===================================================
+           PROVIDER INFO — shows which LLM + Voice provider is active.
+           =================================================== -->
+      <section class="panel" id="provider-panel" aria-labelledby="provider-panel-title">
+        <h2 class="panel-title" id="provider-panel-title">Active Configuration</h2>
+        <div class="provider-info-card" id="provider-info-card">
+          <span>Loading provider info…</span>
+        </div>
+      </section>
 
-  </main><!-- /.main-content -->
+      <!-- ===================================================
+           FUTURE FEATURES — new panels will be added here each week.
+           See week-2-knowledge/, week-3-hands/, week-4-launch/ for details.
+           =================================================== -->
+
+    </main><!-- /.main-content -->
+
+  </div><!-- /.app-body -->
 
 </div><!-- /#app -->
 
