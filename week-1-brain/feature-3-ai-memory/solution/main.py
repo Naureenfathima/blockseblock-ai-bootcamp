@@ -229,8 +229,12 @@ async def session_chat(session_id: str, request: ChatRequest) -> StructuredRespo
     # Persist the user's message first so it's captured even if the LLM call fails.
     add_message(session_id, "user", request.message)
 
+    # Note: if using an Ollama SLM without JSON mode support, the provider
+    # falls back to plain text — _parse_structured's try/except handles that
+    # gracefully (intent="unclear", confidence=0.0). See docs/slm-guide.md
+    # for which local models support JSON mode reliably.
     result = await call_llm(messages, temperature=0.3, response_format={"type": "json_object"})
-    structured = _parse_structured(result.content or "")
+    structured = _parse_structured(result.content or "")  # LLMResponse.content — works for all providers
 
     # Store only the human-readable answer as the assistant turn — the structured
     # metadata (intent, confidence) is per-turn UI data, not needed in history.

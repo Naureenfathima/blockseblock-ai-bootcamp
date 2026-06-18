@@ -159,3 +159,24 @@ Will conversations regularly exceed 20–30 messages?
 ```
 
 For most students finishing this bootcamp: Strategy 1 now, Strategy 2 in Week 4 when you containerize. Strategy 3 is a stretch for anyone building a customer-facing product.
+
+---
+
+## What You Built vs. What Frameworks Call It
+
+This table maps the Week 1 implementation to equivalent LangChain concepts, so you can read LangChain documentation with full understanding of what it's doing under the hood.
+
+| What you built in this course | LangChain equivalent | Notes |
+|-------------------------------|----------------------|-------|
+| `_store: dict[str, Session]` in `session_store.py` | `ConversationBufferMemory` | LangChain wraps the same dict pattern in a class |
+| `messages[-CONTEXT_WINDOW_SIZE:]` sliding window | `ConversationBufferWindowMemory(k=20)` | `k` is the window size |
+| Summarization strategy (Resource 3, Strategy 3) | `ConversationSummaryMemory` | LangChain calls the LLM to summarize, same idea |
+| Summary + recent messages (hybrid) | `ConversationSummaryBufferMemory` | Best of both: summary for old + verbatim for recent |
+| `get_session(id)` → session history | `memory.load_memory_variables({})["history"]` | Same read pattern |
+| `add_message(id, "user", ...)` | `memory.save_context({"input": text}, ...)` | LangChain saves both turns at once |
+| `list_sessions()` | No direct equivalent | LangChain doesn't manage multiple sessions by default — you'd add a dict of memories |
+| `POST /api/sessions` | `ConversationChain(memory=ConversationBufferMemory())` | LangChain creates memory when the chain is created |
+
+**Key insight:** LangChain's memory classes are doing exactly what `session_store.py` does — storing messages in a list and optionally summarizing them. Building it yourself first means you understand what LangChain is abstracting, not just how to call it.
+
+**If you want to use LangChain for memory instead:** replace `session_store.py` with a LangChain `ConversationBufferMemory` instance per session ID in a dict. The HTTP endpoints and UI stay identical — only the storage backend changes.

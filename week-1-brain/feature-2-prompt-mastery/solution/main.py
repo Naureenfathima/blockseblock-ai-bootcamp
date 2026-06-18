@@ -143,7 +143,7 @@ async def chat_structured(request: ChatRequest) -> StructuredResponse:
         response_format={"type": "json_object"},
     )
 
-    raw_text = result.content or ""
+    raw_text = result.content or ""  # LLMResponse.content — same accessor for all providers
 
     try:
         data = json.loads(raw_text)

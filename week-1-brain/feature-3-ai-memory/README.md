@@ -21,9 +21,13 @@ By the end, the sidebar shows all your conversations, clicking one reloads its h
 | Token (context cost) | [GLOSSARY.md — Token](../../../GLOSSARY.md#token) |
 | Stateless vs Stateful | This README — see below |
 | Sliding window | `solution/main.py` — `CONTEXT_WINDOW_SIZE` |
+| LLMResponse | `shared/providers/base.py` — the normalized response object returned by `call_llm()` |
 
 **Stateless vs Stateful:**  
 Features 1 and 2 are *stateless* — the server treats every request as if it never saw the user before. Feature 3 makes the app *stateful* — the server now holds data (sessions) between requests. This is a fundamental shift in how the backend works, and introduces the need for storage, cleanup, and context management.
+
+**Why `result.content`, not `result.choices[0].message.content`:**  
+`call_llm()` returns a `LLMResponse` object (defined in `shared/providers/base.py`), not a raw OpenAI response. `result.content` is the normalized text accessor that works identically for every provider — OpenAI, Groq, Anthropic, Ollama, Azure, Bedrock, Vertex. Never use `result.choices[0].message.content` — that's a raw OpenAI-only pattern that will crash on any other provider.
 
 ---
 
@@ -70,6 +74,7 @@ uvicorn main:app --reload --port 8000
 - [ ] In message 3 or later, reference something from message 1 (e.g. "going back to what I asked about hiking boots…")
 - [ ] Confirm the assistant answers correctly — it should remember the earlier context
 - [ ] Start a second session and confirm it has no memory of the first
+- [ ] **Provider-switch test:** change `LLM_PROVIDER` in `.env` to a different provider (e.g. `groq` → `ollama`, or `openai` → `groq`) and repeat a multi-turn conversation — session memory should work identically, because `session_store.py` is provider-agnostic and `result.content` works the same for every provider
 
 ---
 
@@ -79,6 +84,21 @@ uvicorn main:app --reload --port 8000
 2. **Session titles** — right now the title is the first user message. Change `new_session()` to accept an optional `title` parameter, and let users name their sessions.
 3. **Delete a session** — add `DELETE /api/sessions/{id}` that removes the session from `_store` and add a delete button in the sidebar.
 4. **Message timestamps** — the `Message` model has a `timestamp` field. Render each message bubble with a relative time label ("2 min ago") in the UI.
+
+---
+
+## Framework Bridge
+
+> **What you built vs. what frameworks call it**
+>
+> | What you built in this course | LangChain equivalent |
+> |-------------------------------|----------------------|
+> | `session_store.py` — in-memory dict of sessions | `ConversationBufferMemory` |
+> | `messages[-CONTEXT_WINDOW_SIZE:]` sliding window | `ConversationBufferWindowMemory(k=20)` |
+> | `GET /api/sessions/{id}/history` | `.load_memory_variables({})["history"]` |
+> | `add_message(id, "user", ...)` + `add_message(id, "assistant", ...)` | `memory.save_context({"input": ...}, {"output": ...})` |
+>
+> This course builds these patterns from scratch so you understand what LangChain is wrapping. Once you understand the internals, using LangChain becomes a shortcut rather than a black box. See Resource 3 for the full equivalents table and a SQLite upgrade sketch.
 
 ---
 

@@ -13,7 +13,10 @@ import functools
 from shared.config import settings
 from shared.providers.base import LLMProvider
 
-_VALID_PROVIDERS = {"openai", "anthropic", "cohere", "ollama", "custom"}
+_VALID_PROVIDERS = {
+    "openai", "anthropic", "cohere", "ollama", "groq",
+    "azure", "bedrock", "vertex", "custom",
+}
 
 
 def _build_provider(provider_name: str) -> LLMProvider:
@@ -44,6 +47,33 @@ def _build_provider(provider_name: str) -> LLMProvider:
         # Ollama needs no API key — but we still run the connectivity check at
         # startup so students get a clear error if `ollama serve` isn't running.
         return OllamaProvider()
+
+    if provider_name == "groq":
+        from shared.providers.groq_provider import GroqProvider
+
+        _validate_fields(provider_name, ["groq_api_key"])
+        return GroqProvider()
+
+    if provider_name == "azure":
+        from shared.providers.azure_provider import AzureProvider
+
+        _validate_fields(
+            provider_name,
+            ["azure_openai_api_key", "azure_openai_endpoint", "azure_openai_deployment_name"],
+        )
+        return AzureProvider()
+
+    if provider_name == "bedrock":
+        from shared.providers.bedrock_provider import BedrockProvider
+
+        _validate_fields(provider_name, ["aws_access_key_id", "aws_secret_access_key", "bedrock_model_id"])
+        return BedrockProvider()
+
+    if provider_name == "vertex":
+        from shared.providers.vertex_provider import VertexProvider
+
+        _validate_fields(provider_name, ["gcp_project_id", "vertex_model"])
+        return VertexProvider()
 
     if provider_name == "custom":
         from shared.providers.openai_provider import OpenAIProvider

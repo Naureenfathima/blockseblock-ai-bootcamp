@@ -10,6 +10,12 @@ IMPORTANT — LIMITATION:
   development and demos, but not for production. See Resource 3
   (resource/memory-patterns-guide.md in feature-3-ai-memory/) for a comparison
   of memory strategies, including how to swap this out for SQLite or Postgres.
+
+FRAMEWORK EQUIVALENTS (for students exploring LangChain after this course):
+  This module is what LangChain calls ConversationBufferMemory.
+  The sliding window in main.py (messages[-CONTEXT_WINDOW_SIZE:]) is what
+  LangChain calls ConversationBufferWindowMemory.
+  See Resource 3 for the full "What You Built vs What Frameworks Call It" table.
 """
 import uuid
 from datetime import datetime, timezone

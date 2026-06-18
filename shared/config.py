@@ -24,20 +24,32 @@ class Settings(BaseSettings):
     # -------------------------------------------------------------------------
 
     # Which provider to use for chat/agents/RAG.
-    # Valid values: "openai", "anthropic", "cohere", "ollama", "custom"
-    llm_provider: str = "openai"
+    # Valid values: "groq" | "openai" | "anthropic" | "cohere" | "ollama"
+    #               "azure" | "bedrock" | "vertex" | "custom"
+    # groq is recommended for beginners — free tier, no credit card, very fast.
+    llm_provider: str = "groq"
 
     # Optional: use a different provider for voice (STT/TTS) in Feature 10.
     # Defaults to llm_provider if not set.
     voice_provider: str = ""
 
+    # Optional: use a separate provider for image understanding (Feature 10 Vision).
+    vlm_provider: str = ""
+
+    # -------------------------------------------------------------------------
+    # Groq (recommended for beginners — free tier at console.groq.com)
+    # -------------------------------------------------------------------------
+    groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
+
     # -------------------------------------------------------------------------
     # OpenAI
     # -------------------------------------------------------------------------
     openai_api_key: str = ""
-    # Leave blank to use the default OpenAI API endpoint.
-    openai_base_url: str = ""
     openai_model: str = "gpt-4o-mini"
+    # Optional: override the OpenAI base URL (e.g. for a proxy or compatible server).
+    # For Groq/Azure/Bedrock/Vertex, use their dedicated sections below instead.
+    openai_base_url: str = ""
 
     # -------------------------------------------------------------------------
     # Anthropic
@@ -52,13 +64,36 @@ class Settings(BaseSettings):
     cohere_model: str = "command-r-plus"
 
     # -------------------------------------------------------------------------
-    # Ollama (local — no API key needed)
+    # Ollama (local SLM — no API key needed)
     # -------------------------------------------------------------------------
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "llama3.1"
 
     # -------------------------------------------------------------------------
-    # Custom OpenAI-compatible endpoint
+    # Azure OpenAI
+    # -------------------------------------------------------------------------
+    azure_openai_api_key: str = ""
+    azure_openai_endpoint: str = ""
+    azure_openai_deployment_name: str = ""
+    azure_openai_api_version: str = "2024-02-01"
+
+    # -------------------------------------------------------------------------
+    # AWS Bedrock
+    # -------------------------------------------------------------------------
+    aws_access_key_id: str = ""
+    aws_secret_access_key: str = ""
+    aws_region: str = "us-east-1"
+    bedrock_model_id: str = ""
+
+    # -------------------------------------------------------------------------
+    # GCP Vertex AI
+    # -------------------------------------------------------------------------
+    gcp_project_id: str = ""
+    gcp_region: str = "us-central1"
+    vertex_model: str = ""
+
+    # -------------------------------------------------------------------------
+    # Custom OpenAI-compatible endpoint (Together AI, Fireworks, vLLM, etc.)
     # -------------------------------------------------------------------------
     custom_base_url: str = ""
     custom_api_key: str = ""
@@ -75,6 +110,13 @@ class Settings(BaseSettings):
     # -------------------------------------------------------------------------
     app_port: int = 8000
     app_host: str = "0.0.0.0"
+
+    # -------------------------------------------------------------------------
+    # Feature 10: Voice + Vision models
+    # -------------------------------------------------------------------------
+    stt_model: str = "whisper-large-v3"   # speech-to-text (Groq default)
+    tts_model: str = ""                    # text-to-speech (OpenAI default when set)
+    vlm_model: str = "llava"              # vision-language model (Ollama default)
 
     # -------------------------------------------------------------------------
     # Session management (Feature 3+)

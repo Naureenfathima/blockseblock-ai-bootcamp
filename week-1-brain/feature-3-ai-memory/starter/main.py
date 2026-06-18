@@ -221,6 +221,9 @@ async def session_chat(session_id: str, request: ChatRequest) -> StructuredRespo
       7. Call the LLM:
            result = await call_llm(messages, temperature=0.3,
                                    response_format={"type": "json_object"})
+         IMPORTANT: access the text as result.content (not result.choices[0].message.content).
+         call_llm() returns a LLMResponse object — .content works for ALL providers
+         (OpenAI, Groq, Anthropic, Ollama, etc.). choices[0] only works for raw OpenAI objects.
 
       8. Parse the result:
            structured = _parse_structured(result.content or "")
