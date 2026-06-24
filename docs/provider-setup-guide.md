@@ -252,6 +252,34 @@ CUSTOM_MODEL=your-model-name
 
 ---
 
+## Alternative Retrieval: PageIndex
+
+PageIndex is **not an LLM provider** — it's a different retrieval architecture used in Feature 6's Smart Router alongside your chosen provider.
+
+| | RAG (Features 4-6) | PageIndex |
+|---|---|---|
+| **How it retrieves** | Vector similarity search | LLM reasoning over a hierarchical tree index |
+| **Chunking required** | Yes | No |
+| **Vector DB required** | Yes | No |
+| **Best for** | General semantic queries, many documents | Long professional docs (financial, legal, technical) |
+| **FinanceBench accuracy** | Significantly lower | 98.7% |
+
+**When to consider PageIndex instead of standard RAG:**
+- Financial reports, legal filings, regulatory documents, technical manuals (50-500 pages)
+- Your RAG pipeline keeps returning wrong answers despite tuning chunk size and overlap
+- The document has complex internal structure — cross-references, defined terms, section hierarchies
+
+**Setup (Feature 6):**
+```bash
+pip install -r requirements.txt  # from github.com/VectifyAI/PageIndex
+python run_pageindex.py --pdf_path your_doc.pdf   # builds tree JSON
+# Feature 6 Smart Router routes: professional docs → PageIndex, general queries → vector RAG
+```
+
+Source: [github.com/VectifyAI/PageIndex](https://github.com/VectifyAI/PageIndex) (MIT licence). Cloud service + MCP server at [pageindex.ai](https://pageindex.ai).
+
+---
+
 ## Verifying Your Setup
 
 After editing `.env`, start the server from any feature's `solution/` folder:

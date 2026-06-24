@@ -372,6 +372,376 @@ newChatBtn?.addEventListener("click", createNewSession);
 loadSessions();
 
 // =============================================================================
-// Future features will add their JS sections below this line.
-// Each section should be clearly commented with the feature name and number.
+// Feature 4: Tab navigation (Chat | Documents)
 // =============================================================================
+
+const tabButtons = document.querySelectorAll(".tab-btn");
+const tabPanels  = document.querySelectorAll(".tab-panel");
+
+/**
+ * Switch the visible tab panel.
+ * @param {string} tabName - the data-tab value: "chat" or "documents"
+ */
+function switchTab(tabName) {
+  tabButtons.forEach((btn) => {
+    const active = btn.dataset.tab === tabName;
+    btn.classList.toggle("active", active);
+    btn.setAttribute("aria-selected", String(active));
+  });
+
+  tabPanels.forEach((panel) => {
+    const show = panel.id === `${tabName}-panel`;
+    panel.toggleAttribute("hidden", !show);
+  });
+
+  // Refresh document list whenever the Documents tab is opened.
+  if (tabName === "documents") loadDocuments();
+  // Refresh search document filter whenever the Search tab is opened.
+  if (tabName === "search") loadSearchDocumentFilter();
+}
+
+tabButtons.forEach((btn) => {
+  btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+});
+
+// =============================================================================
+// Feature 4: Document ingestion
+// =============================================================================
+
+const uploadArea        = document.getElementById("upload-area");
+const fileInput         = document.getElementById("file-input");
+const uploadLabel       = document.getElementById("upload-label");
+const uploadProgress    = document.getElementById("upload-progress");
+const uploadProgressText = document.getElementById("upload-progress-text");
+const documentList      = document.getElementById("document-list");
+const strategySelect    = document.getElementById("strategy-select");
+
+/** Upload a File object to POST /api/documents/upload with the selected strategy. */
+async function uploadFile(file) {
+  const strategy = strategySelect?.value ?? "sentence";
+
+  // Show spinner, hide label.
+  if (uploadLabel)    uploadLabel.hidden = true;
+  if (uploadProgress) uploadProgress.hidden = false;
+  if (uploadProgressText) uploadProgressText.textContent = `Uploading "${file.name}" (${strategy})…`;
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("strategy", strategy);
+
+  try {
+    const res = await fetch(`${API_BASE}/api/documents/upload`, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Server error ${res.status}`);
+    }
+
+    await loadDocuments();
+  } catch (err) {
+    alert(`Upload failed: ${err.message}`);
+  } finally {
+    if (uploadLabel)    uploadLabel.hidden = false;
+    if (uploadProgress) uploadProgress.hidden = true;
+    if (fileInput)      fileInput.value = "";
+  }
+}
+
+/** Fetch /api/documents and render the document list. */
+async function loadDocuments() {
+  if (!documentList) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/documents`);
+    if (!res.ok) throw new Error("documents endpoint not available");
+
+    const docs = await res.json();
+
+    if (!docs.length) {
+      documentList.innerHTML = `<p class="sidebar-empty">No documents uploaded yet. Upload a file above to get started.</p>`;
+      return;
+    }
+
+    documentList.innerHTML = "";
+    docs.forEach((doc) => {
+      documentList.appendChild(buildDocumentCard(doc));
+    });
+  } catch (err) {
+    documentList.innerHTML = `<p class="sidebar-empty" style="color:var(--color-pistache);font-size:0.82rem">
+      Document list requires the Feature 4 server.<br>${escapeHtml(err.message)}
+    </p>`;
+  }
+}
+
+/**
+ * Build a document card DOM element.
+ * Clicking the header toggles the chunk list (lazy-loaded).
+ */
+function buildDocumentCard(doc) {
+  const card = document.createElement("div");
+  card.className = "document-card";
+  card.dataset.docId = doc.id;
+
+  const header = document.createElement("div");
+  header.className = "document-card-header";
+  header.setAttribute("role", "button");
+  header.setAttribute("aria-expanded", "false");
+  header.tabIndex = 0;
+
+  const title = document.createElement("span");
+  title.className = "document-card-title";
+  title.textContent = doc.filename;
+  title.title = doc.filename;
+
+  const badge = document.createElement("span");
+  badge.className = "status-badge";
+  badge.dataset.status = doc.status;
+  badge.textContent = doc.status;
+
+  // Strategy tag
+  const stratTag = document.createElement("span");
+  stratTag.className = "strategy-tag";
+  stratTag.textContent = doc.chunking_strategy ?? "sentence";
+
+  const meta = document.createElement("span");
+  meta.className = "document-card-meta";
+  meta.textContent = doc.status === "ready"
+    ? `${doc.chunk_count} chunks · ${doc.chunk_count} vectors indexed`
+    : "";
+
+  const deleteBtn = document.createElement("button");
+  deleteBtn.className = "btn-delete";
+  deleteBtn.textContent = "Delete";
+  deleteBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    deleteDocumentById(doc.id);
+  });
+
+  header.appendChild(title);
+  header.appendChild(badge);
+  header.appendChild(stratTag);
+  header.appendChild(meta);
+  header.appendChild(deleteBtn);
+  card.appendChild(header);
+
+  // Clicking header expands/collapses chunks.
+  let chunksLoaded = false;
+  const chunkContainer = document.createElement("div");
+  chunkContainer.className = "chunk-list";
+  chunkContainer.hidden = true;
+  card.appendChild(chunkContainer);
+
+  async function toggleChunks() {
+    const expanded = header.getAttribute("aria-expanded") === "true";
+    header.setAttribute("aria-expanded", String(!expanded));
+    chunkContainer.hidden = expanded;
+
+    if (!expanded && !chunksLoaded) {
+      chunksLoaded = true;
+      chunkContainer.innerHTML = `<div class="chunk-item"><span class="chunk-preview" style="color:var(--color-pistache)">Loading chunks…</span></div>`;
+      try {
+        const res = await fetch(`${API_BASE}/api/documents/${doc.id}/chunks`);
+        const chunks = await res.json();
+        if (!chunks.length) {
+          chunkContainer.innerHTML = `<div class="chunk-item"><span class="chunk-preview">No chunks found.</span></div>`;
+          return;
+        }
+        chunkContainer.innerHTML = "";
+        chunks.forEach((c) => {
+          const pageNum = c.metadata?.page_number;
+          const pageSuffix = pageNum != null ? ` · p${pageNum}` : "";
+          const item = document.createElement("div");
+          item.className = "chunk-item";
+          item.innerHTML = `
+            <span class="chunk-index">${c.chunk_index}${escapeHtml(pageSuffix)}</span>
+            <span class="chunk-preview">${escapeHtml((c.text || "").slice(0, 120))}${c.text && c.text.length > 120 ? "…" : ""}</span>
+          `;
+          chunkContainer.appendChild(item);
+        });
+      } catch {
+        chunkContainer.innerHTML = `<div class="chunk-item"><span class="chunk-preview" style="color:var(--color-pistache)">Could not load chunks.</span></div>`;
+      }
+    }
+  }
+
+  header.addEventListener("click", toggleChunks);
+  header.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleChunks(); }
+  });
+
+  return card;
+}
+
+/** Delete a document by ID, then refresh the list. */
+async function deleteDocumentById(docId) {
+  if (!confirm("Delete this document and all its chunks?")) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/documents/${docId}`, { method: "DELETE" });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Server error ${res.status}`);
+    }
+    await loadDocuments();
+  } catch (err) {
+    alert(`Delete failed: ${err.message}`);
+  }
+}
+
+// ── File input handler ──
+fileInput?.addEventListener("change", (e) => {
+  const file = e.target.files?.[0];
+  if (file) uploadFile(file);
+});
+
+// ── Drag-and-drop ──
+uploadArea?.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  uploadArea.classList.add("drag-over");
+});
+
+uploadArea?.addEventListener("dragleave", () => {
+  uploadArea.classList.remove("drag-over");
+});
+
+uploadArea?.addEventListener("drop", (e) => {
+  e.preventDefault();
+  uploadArea.classList.remove("drag-over");
+  const file = e.dataTransfer?.files?.[0];
+  if (file) uploadFile(file);
+});
+
+// =============================================================================
+// Feature 5: Semantic search (Ask My Documents)
+// =============================================================================
+
+const searchInput     = document.getElementById("search-input");
+const searchBtn       = document.getElementById("search-btn");
+const searchDocFilter = document.getElementById("search-doc-filter");
+const searchResults   = document.getElementById("search-results");
+
+/** Populate the document filter dropdown from GET /api/documents. */
+async function loadSearchDocumentFilter() {
+  if (!searchDocFilter) return;
+
+  // Keep "All documents" option and rebuild the rest.
+  searchDocFilter.innerHTML = `<option value="">All documents</option>`;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/documents`);
+    if (!res.ok) return;
+    const docs = await res.json();
+    docs.filter((d) => d.status === "ready").forEach((d) => {
+      const opt = document.createElement("option");
+      opt.value = d.id;
+      opt.textContent = d.filename;
+      searchDocFilter.appendChild(opt);
+    });
+  } catch {
+    // Search still works without the filter populated.
+  }
+}
+
+/**
+ * Run a semantic search and render results.
+ * Scores >= 0.6 get a Matcha (high) border, >= 0.35 get Chai (medium), else gray (low).
+ */
+async function runSearch() {
+  const query = searchInput?.value.trim();
+  if (!query) return;
+
+  if (searchResults) {
+    searchResults.innerHTML = `
+      <div class="search-thinking">
+        <span class="upload-spinner" aria-hidden="true"></span>
+        <span>Searching…</span>
+      </div>`;
+  }
+  if (searchBtn) searchBtn.disabled = true;
+
+  const documentId = searchDocFilter?.value || null;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/search`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query, top_k: 5, document_id: documentId }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Server error ${res.status}`);
+    }
+
+    const results = await res.json();
+
+    if (!results.length) {
+      searchResults.innerHTML = `<p class="sidebar-empty">No matching chunks found. Upload a document first, or try a different question.</p>`;
+      return;
+    }
+
+    searchResults.innerHTML = "";
+    results.forEach((r) => {
+      searchResults.appendChild(buildResultCard(r));
+    });
+  } catch (err) {
+    if (searchResults) {
+      searchResults.innerHTML = `<p class="sidebar-empty" style="color:var(--color-pistache)">
+        Search failed: ${escapeHtml(err.message)}
+      </p>`;
+    }
+  } finally {
+    if (searchBtn) searchBtn.disabled = false;
+  }
+}
+
+/**
+ * Build a search result card DOM element.
+ * @param {{ text: string, filename: string, chunk_index: number, score: number, document_id: string }} result
+ */
+function buildResultCard(result) {
+  const pct = Math.round(result.score * 100);
+  const level = pct >= 60 ? "high" : pct >= 35 ? "medium" : "low";
+
+  const card = document.createElement("div");
+  card.className = "search-result-card";
+  card.dataset.scoreLevel = level;
+
+  const header = document.createElement("div");
+  header.className = "result-card-header";
+
+  const filenameBadge = document.createElement("span");
+  filenameBadge.className = "result-filename-badge";
+  filenameBadge.textContent = result.filename || "Unknown source";
+
+  const chunkMeta = document.createElement("span");
+  chunkMeta.className = "result-chunk-meta";
+  chunkMeta.textContent = `chunk ${result.chunk_index}`;
+
+  const scoreBadge = document.createElement("span");
+  scoreBadge.className = "result-score-badge";
+  scoreBadge.dataset.level = level;
+  scoreBadge.textContent = `${pct}%`;
+  scoreBadge.title = "Similarity score (higher = more similar, not necessarily more relevant)";
+
+  header.appendChild(filenameBadge);
+  header.appendChild(chunkMeta);
+  header.appendChild(scoreBadge);
+
+  const text = document.createElement("p");
+  text.className = "result-text";
+  text.textContent = result.text || "";
+
+  card.appendChild(header);
+  card.appendChild(text);
+
+  return card;
+}
+
+searchBtn?.addEventListener("click", runSearch);
+searchInput?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { e.preventDefault(); runSearch(); }
+});

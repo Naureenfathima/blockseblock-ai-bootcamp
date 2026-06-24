@@ -42,9 +42,40 @@
     <main class="main-content">
 
       <!-- ===================================================
+           FEATURE 4: Tab navigation (Chat | Documents)
+           Switches between the chat panel and the documents panel.
+           =================================================== -->
+      <nav class="tab-nav" role="tablist" aria-label="Feature panels">
+        <button
+          class="tab-btn active"
+          role="tab"
+          id="tab-chat"
+          data-tab="chat"
+          aria-selected="true"
+          aria-controls="chat-panel"
+        >Chat</button>
+        <button
+          class="tab-btn"
+          role="tab"
+          id="tab-documents"
+          data-tab="documents"
+          aria-selected="false"
+          aria-controls="documents-panel"
+        >Documents</button>
+        <button
+          class="tab-btn"
+          role="tab"
+          id="tab-search"
+          data-tab="search"
+          aria-selected="false"
+          aria-controls="search-panel"
+        >Ask My Documents</button>
+      </nav>
+
+      <!-- ===================================================
            FEATURE 1 + 2: Chat panel
            =================================================== -->
-      <section class="panel" id="chat-panel" aria-labelledby="chat-panel-title">
+      <section class="panel tab-panel" id="chat-panel" role="tabpanel" aria-labelledby="tab-chat">
         <!-- Panel header with Structured Mode toggle (Feature 2) -->
         <div class="panel-header-row">
           <h2 class="panel-title" id="chat-panel-title">
@@ -54,8 +85,6 @@
 
           <!-- ===================================================
                FEATURE 2: Structured Mode toggle
-               When on, responses render as cards (intent badge +
-               confidence meter + answer). When off, plain text (Feature 1).
                =================================================== -->
           <label class="toggle-label" for="structured-toggle">
             <span class="toggle-text">Structured Mode</span>
@@ -89,6 +118,111 @@
       </section>
 
       <!-- ===================================================
+           FEATURE 4: Documents panel
+           Upload files, view status + chunk counts, inspect chunks.
+           =================================================== -->
+      <section class="panel tab-panel" id="documents-panel" role="tabpanel" aria-labelledby="tab-documents" hidden>
+        <div class="panel-header-row">
+          <h2 class="panel-title">Documents</h2>
+        </div>
+
+        <!-- Upload options row (strategy selector + CAG info) -->
+        <div class="upload-options">
+          <label for="strategy-select" class="strategy-label">Chunking strategy:</label>
+          <select id="strategy-select" class="strategy-select">
+            <option value="sentence">Sentence-aware (default)</option>
+            <option value="paragraph">Paragraph</option>
+          </select>
+          <span class="cag-trigger" tabindex="0" role="button" aria-haspopup="true" aria-expanded="false">
+            ℹ What is CAG?
+            <span class="cag-popover" role="tooltip">
+              <strong>CAG (Cache-Augmented Generation)</strong> skips chunking entirely — all documents
+              are loaded into one big context window and the model reads everything.
+              No vector DB, no retrieval step, zero missed chunks.
+              Works best for &lt;50 pages of stable documents.
+              RAG (what we build here) scales to many documents but requires retrieval to work correctly.
+            </span>
+          </span>
+        </div>
+
+        <!-- Upload area -->
+        <div class="upload-area" id="upload-area">
+          <input
+            type="file"
+            id="file-input"
+            accept=".txt,.pdf,.docx"
+            class="sr-only"
+          />
+          <label for="file-input" class="upload-label" id="upload-label">
+            <span class="upload-icon" aria-hidden="true">📄</span>
+            <span>Drag &amp; drop a file here, or <strong>click to upload</strong></span>
+            <span class="upload-hint">.txt · .pdf · .docx</span>
+          </label>
+          <div class="upload-progress" id="upload-progress" hidden>
+            <span class="upload-spinner" aria-hidden="true"></span>
+            <span id="upload-progress-text">Uploading…</span>
+          </div>
+        </div>
+
+        <!-- Document list -->
+        <div id="document-list" class="document-list">
+          <p class="sidebar-empty">No documents uploaded yet. Upload a file above to get started.</p>
+        </div>
+
+        <!-- Alternative architectures callout -->
+        <div class="alt-arch-callout">
+          <span class="alt-arch-icon" aria-hidden="true">🏗️</span>
+          <div class="alt-arch-body">
+            <strong>Working with long financial, legal, or technical documents?</strong>
+            Consider <a href="https://github.com/VectifyAI/PageIndex" target="_blank" rel="noopener">PageIndex</a>
+            — vectorless, reasoning-based RAG that achieved 98.7% on FinanceBench.
+            No chunking, no embeddings. See Resource 4 for when to use it.
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================
+           FEATURE 5: Ask My Documents (semantic search panel)
+           Embeds the user's question, finds nearest chunks, shows scored results.
+           =================================================== -->
+      <section class="panel tab-panel" id="search-panel" role="tabpanel" aria-labelledby="tab-search" hidden>
+        <div class="panel-header-row">
+          <h2 class="panel-title">Ask My Documents</h2>
+        </div>
+
+        <!-- Search controls -->
+        <div class="search-controls">
+          <div class="search-input-row">
+            <input
+              type="text"
+              id="search-input"
+              class="search-input"
+              placeholder="Ask a question about your uploaded documents…"
+              autocomplete="off"
+            />
+            <select id="search-doc-filter" class="search-doc-filter">
+              <option value="">All documents</option>
+            </select>
+            <button id="search-btn" class="btn btn-primary" type="button">Search</button>
+          </div>
+        </div>
+
+        <!-- Results area -->
+        <div id="search-results" class="search-results">
+          <p class="sidebar-empty">Enter a question above and click Search.</p>
+        </div>
+
+        <!-- Honest limitations note -->
+        <div class="search-retrieval-note">
+          <strong>These are raw retrieval results — matching passages from your documents.</strong>
+          The score is a <em>similarity</em> score, not a <em>relevance</em> score.
+          A passage can be semantically close to your question without actually answering it.
+          Coming in Feature 6: the Smart Router combines these passages with LLM generation
+          to produce a synthesised answer, and decides when to skip retrieval entirely.
+        </div>
+      </section>
+
+      <!-- ===================================================
            PROVIDER INFO — shows which LLM + Voice provider is active.
            =================================================== -->
       <section class="panel" id="provider-panel" aria-labelledby="provider-panel-title">
@@ -100,7 +234,6 @@
 
       <!-- ===================================================
            FUTURE FEATURES — new panels will be added here each week.
-           See week-2-knowledge/, week-3-hands/, week-4-launch/ for details.
            =================================================== -->
 
     </main><!-- /.main-content -->

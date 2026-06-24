@@ -269,6 +269,10 @@ async def provider_info():
         "anthropic": settings.anthropic_model,
         "cohere": settings.cohere_model,
         "ollama": settings.ollama_model,
+        "groq": settings.groq_model,
+        "azure": settings.azure_openai_deployment_name,
+        "bedrock": settings.bedrock_model_id,
+        "vertex": settings.vertex_model,
         "custom": settings.custom_model,
     }
     return {
